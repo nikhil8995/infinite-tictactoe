@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Infinite Tic-Tac-Toe</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --grid-color: #333;
+            --text-color: #e0e0e0;
+            --accent-x: #ff4757;
+            --accent-o: #2ed573;
+            --fading-opacity: 0.3;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Prevent text selection on mobile taps */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            height: 30px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            background-color: var(--grid-color);
+            padding: 10px;
+            border-radius: 15px;
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            aspect-ratio: 1 / 1;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        /* Player Colors */
+        .cell.X { color: var(--accent-x); }
+        .cell.O { color: var(--accent-o); }
+
+        /* The Animation for the piece about to expire */
+        .cell.about-to-fade {
+            animation: pulse-fade 1.5s infinite ease-in-out;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes pulse-fade {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: var(--fading-opacity); transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Win Modal */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal h2 {
+            font-size: 3rem;
+            margin: 0 0 20px 0;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+        }
+        
+        .btn:active { transform: scale(0.95); }
+
+        .info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.5;
+            text-align: center;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Infinite Tic-Tac-Toe</h1>
+    <div class="status" id="status">X's Turn</div>
+
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <div class="info">Only 3 pieces allowed per player.<br>Oldest piece fades when 4th is placed.</div>
+
+    <div class="modal" id="modal">
+        <h2 id="winnerText">X Wins!</h2>
+        <button class="btn" onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('status');
+        const modal = document.getElementById('modal');
+        const winnerText = document.getElementById('winnerText');
+
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let boardState = Array(9).fill('');
+        
+        // Queues to track the order of moves [oldest, middle, newest]
+        let moves = {
+            'X': [],
+            'O': []
+        };
+
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            // Validation: 
+            // 1. Check if game is active
+            // 2. Check if cell is empty (cannot place on existing X or O)
+            // Note: Even if a cell is "fading", it is technically still occupied until the click processes.
+            if (boardState[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            processMove(clickedCell, clickedCellIndex);
+        }
+
+        function processMove(cell, index) {
+            const currentQueue = moves[currentPlayer];
+
+            // 1. THE INFINITY LOGIC
+            // If the player already has 3 items on board, remove the oldest one (FIFO)
+            if (currentQueue.length === 3) {
+                const indexToRemove = currentQueue.shift(); // Get oldest index
+                boardState[indexToRemove] = ''; // Clear logical board
+                const cellToRemove = document.querySelector(`.cell[data-index='${indexToRemove}']`);
+                cellToRemove.textContent = '';
+                cellToRemove.classList.remove(currentPlayer);
+                cellToRemove.classList.remove('about-to-fade'); // Clean up style
+            }
+
+            // 2. PLACE NEW PIECE
+            boardState[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer);
+            
+            // Add new move to the queue
+            currentQueue.push(index);
+
+            // 3. CHECK WIN
+            if (checkWin()) {
+                endGame(false);
+            } else {
+                // 4. SWITCH TURNS
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusText.textContent = `${currentPlayer}'s Turn`;
+                updateFadingVisuals();
+            }
+        }
+
+        function updateFadingVisuals() {
+            // Clear existing fade warnings
+            cells.forEach(cell => cell.classList.remove('about-to-fade'));
+
+            // Check if the NEW current player has 3 moves.
+            // If they do, their oldest move (index 0) will disappear on their next click.
+            const currentQueue = moves[currentPlayer];
+            if (currentQueue.length === 3) {
+                const fadingIndex = currentQueue[0];
+                const fadingCell = document.querySelector(`.cell[data-index='${fadingIndex}']`);
+                if (fadingCell) {
+                    fadingCell.classList.add('about-to-fade');
+                }
+            }
+        }
+
+        function checkWin() {
+            let roundWon = false;
+            for (let i = 0; i < winConditions.length; i++) {
+                const [a, b, c] = winConditions[i];
+                if (boardState[a] === '' || boardState[b] === '' || boardState[c] === '') {
+                    continue;
+                }
+                if (boardState[a] === boardState[b] && boardState[b] === boardState[c]) {
+                    roundWon = true;
+                    break;
+                }
+            }
+            return roundWon;
+        }
+
+        function endGame(draw) {
+            gameActive = false;
+            winnerText.textContent = draw ? "Draw!" : `${currentPlayer} Wins!`;
+            winnerText.style.color = currentPlayer === 'X' ? 'var(--accent-x)' : 'var(--accent-o)';
+            modal.classList.add('active');
+        }
+
+        function resetGame() {
+            currentPlayer = 'X';
+            gameActive = true;
+            boardState = Array(9).fill('');
+            moves = { 'X': [], 'O': [] };
+            statusText.textContent = "X's Turn";
+            
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('X', 'O', 'about-to-fade');
+            });
+            
+            modal.classList.remove('active');
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    </script>
+</body>
+</html>
