@@ -5,106 +5,230 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Infinite Tic-Tac-Toe</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+        
         :root {
-            --bg-color: #1a1a1a;
-            --grid-color: #333;
-            --text-color: #e0e0e0;
-            --accent-x: #ff4757;
-            --accent-o: #2ed573;
-            --fading-opacity: 0.3;
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151b3d;
+            --bg-tertiary: #1e2749;
+            --grid-glow: #2a3f7f;
+            --text-primary: #ffffff;
+            --text-secondary: #b8c5d6;
+            --accent-x: #ff6b9d;
+            --accent-x-glow: #ff1e62;
+            --accent-o: #00d9ff;
+            --accent-o-glow: #00a8ff;
+            --shadow-light: rgba(255, 255, 255, 0.05);
+            --shadow-dark: rgba(0, 0, 0, 0.5);
+            --fading-opacity: 0.25;
         }
 
         * {
             box-sizing: border-box;
-            user-select: none; /* Prevent text selection on mobile taps */
+            user-select: none;
             -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,107,157,0.15) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,217,255,0.15) 0%, transparent 70%);
+            bottom: -150px;
+            left: -150px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 800;
             margin-bottom: 10px;
-            opacity: 0.8;
+            background: linear-gradient(135deg, var(--accent-x) 0%, var(--accent-o) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            text-shadow: 0 0 30px rgba(255,107,157,0.3);
         }
 
         .status {
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            height: 30px;
+            margin-bottom: 30px;
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            font-weight: 600;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
         }
 
         .board {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             grid-template-rows: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            background-color: var(--grid-color);
-            padding: 10px;
-            border-radius: 15px;
+            gap: 15px;
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 20px;
             width: 90vw;
-            max-width: 400px;
+            max-width: 450px;
             aspect-ratio: 1 / 1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 
+                0 20px 60px var(--shadow-dark),
+                0 0 0 1px var(--shadow-light),
+                inset 0 1px 0 var(--shadow-light);
+            position: relative;
+        }
+
+        .board::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 22px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--accent-x) 0%, var(--accent-o) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.3;
+            pointer-events: none;
         }
 
         .cell {
-            background-color: var(--bg-color);
-            border-radius: 8px;
+            background: linear-gradient(145deg, var(--bg-secondary), var(--bg-primary));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: clamp(2.5rem, 8vw, 4rem);
             font-weight: 800;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             aspect-ratio: 1 / 1;
             min-width: 0;
             min-height: 0;
+            box-shadow: 
+                0 4px 15px var(--shadow-dark),
+                inset 0 1px 0 var(--shadow-light);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Player Colors */
-        .cell.X { color: var(--accent-x); }
-        .cell.O { color: var(--accent-o); }
+        .cell:hover:not(.X):not(.O) {
+            background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 20px var(--shadow-dark),
+                inset 0 1px 0 var(--shadow-light);
+        }
 
-        /* The Animation for the piece about to expire */
+        .cell:active:not(.X):not(.O) {
+            transform: translateY(0);
+        }
+
+        /* Player Colors with Glow */
+        .cell.X { 
+            color: var(--accent-x);
+            text-shadow: 
+                0 0 20px var(--accent-x-glow),
+                0 0 40px var(--accent-x-glow);
+            animation: placeX 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .cell.O { 
+            color: var(--accent-o);
+            text-shadow: 
+                0 0 20px var(--accent-o-glow),
+                0 0 40px var(--accent-o-glow);
+            animation: placeO 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes placeX {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes placeO {
+            0% { transform: scale(0) rotate(180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* Fading Animation */
         .cell.about-to-fade {
             animation: pulse-fade 1.5s infinite ease-in-out;
-            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
         }
 
         @keyframes pulse-fade {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: var(--fading-opacity); transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: var(--fading-opacity); 
+                transform: scale(0.95);
+            }
         }
 
         /* Win Modal */
         .modal {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 10;
+            z-index: 100;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s ease;
         }
 
         .modal.active {
@@ -113,51 +237,106 @@
         }
 
         .modal h2 {
-            font-size: 3rem;
-            margin: 0 0 20px 0;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 800;
+            margin: 0 0 30px 0;
+            animation: winnerBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes winnerBounce {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .btn {
-            padding: 15px 30px;
+            padding: 18px 40px;
             font-size: 1.2rem;
-            background: #fff;
-            color: #000;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-x) 0%, var(--accent-o) 100%);
+            color: var(--text-primary);
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+            box-shadow: 
+                0 8px 25px rgba(255, 107, 157, 0.4),
+                0 0 0 1px var(--shadow-light);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .btn:active { transform: scale(0.95); }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 35px rgba(255, 107, 157, 0.5),
+                0 0 0 1px var(--shadow-light);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
 
         .info {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            opacity: 0.5;
+            margin-top: 30px;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: var(--text-secondary);
             text-align: center;
-            max-width: 80%;
+            max-width: 90%;
+            line-height: 1.6;
+            opacity: 0.7;
+        }
+
+        .info span {
+            display: inline-block;
+            margin: 0 3px;
+        }
+
+        .info .highlight {
+            color: var(--accent-x);
+            font-weight: 600;
+        }
+
+        @media (max-width: 500px) {
+            .board {
+                gap: 12px;
+                padding: 15px;
+            }
+            
+            h1 {
+                margin-bottom: 5px;
+            }
+            
+            .status {
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <h1>Infinite Tic-Tac-Toe</h1>
-    <div class="status" id="status">X's Turn</div>
+    <div class="container">
+        <h1>♾️ Infinite Tic-Tac-Toe</h1>
+        <div class="status" id="status">X's Turn</div>
 
-    <div class="board" id="board">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="info">
+            Only <span class="highlight">3 pieces</span> per player
+            <span>•</span>
+            Oldest piece <span class="highlight">fades</span> when 4th is placed
+        </div>
     </div>
-
-    <div class="info">Only 3 pieces allowed per player.<br>Oldest piece fades when 4th is placed.</div>
 
     <div class="modal" id="modal">
         <h2 id="winnerText">X Wins!</h2>

@@ -5,6 +5,7 @@ Your app is now configured for free deployment! Choose one:
 ## Option 1: Render (Recommended - Easiest)
 
 1. **Create a GitHub repository** (if you haven't):
+
    ```bash
    cd /home/nikhil/Documents/Projects/X0
    git init
@@ -12,8 +13,9 @@ Your app is now configured for free deployment! Choose one:
    git commit -m "Initial commit"
    gh repo create infinite-tictactoe --public --source=. --remote=origin --push
    ```
-   
+
    Or manually:
+
    - Go to https://github.com/new
    - Create a new repository
    - Push your code:
@@ -58,6 +60,7 @@ Your app is now configured for free deployment! Choose one:
 ## Option 3: Fly.io
 
 1. **Install Fly CLI**:
+
    ```bash
    curl -L https://fly.io/install.sh | sh
    ```
@@ -108,4 +111,5 @@ git push -u origin main
 ---
 
 ## Recommended: Render
+
 Easiest and most reliable free option. Just connect GitHub and deploy!
